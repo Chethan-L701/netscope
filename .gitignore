@@ -1,0 +1,48 @@
+# Nix
+result
+result-*
+
+# Node.js / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Go
+bin/
+obj/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/netscope-backend
+/netscope
+
+# Databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# OS / Editor / IDE
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.vim
+
+# Local Env
+.env
+.env.local
+.direnv/
+.envrc

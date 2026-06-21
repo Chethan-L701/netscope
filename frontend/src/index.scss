@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Light Mode - Calm Palette */
+  --bg-gradient-start: #f4f6f8;
+  --bg-gradient-end: #eef1f5;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  
+  --text-primary: #334155;
+  --text-secondary: #64748b;
+  
+  /* Calm Accent: Muted Steel Blue */
+  --accent-color: #7a98b4;
+  --accent-hover: #6a88a4;
+  --accent-bg: rgba(122, 152, 180, 0.15);
+  
+  --surface-bg: #ffffff;
+  --surface-border: #e2e8f0;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] {
+  /* Dark Mode - Calm Palette */
+  --bg-gradient-start: #1e242c;
+  --bg-gradient-end: #14181d;
+  --sidebar-bg: #1c2128;
+  --sidebar-border: #2d333b;
+  
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  
+  /* Calm Accent: Muted Steel Blue */
+  --accent-color: #8aa8c4;
+  --accent-hover: #9ab8d4;
+  --accent-bg: rgba(138, 168, 196, 0.15);
+  
+  --surface-bg: #22272e;
+  --surface-border: #373e47;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Remove default focus outlines from charts when clicked */
+.recharts-wrapper,
+.recharts-surface,
+.recharts-wrapper * {
+  outline: none !important;
+}
