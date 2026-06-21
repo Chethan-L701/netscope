@@ -25,7 +25,6 @@ NetScope is a modern, lightweight, and highly customizable network data monitor.
 
 ### Real-time Analytics
 ![Network Comparison](docs/images/networkcomparsion.png)
-![Resume Monitoring](docs/images/resume.png)
 
 ### Settings & Customization
 ![Custom Theme](docs/images/customtheme.png)
@@ -43,13 +42,13 @@ NetScope is a modern, lightweight, and highly customizable network data monitor.
 **Method 1: Run directly via Nix (Recommended)**
 You can launch NetScope directly from the repository without cloning it:
 ```bash
-nix run github:<your-username>/netscope
+nix run github:Chethan-L701/netscope
 ```
 
 **Method 2: Clone & Build from source**
 If you want to modify or run from a local copy:
 ```bash
-git clone https://github.com/<your-username>/netscope.git
+git clone https://github.com/Chethan-L701/netscope.git
 cd netscope
 nix build .#
 ./result/bin/netscope
@@ -83,6 +82,3 @@ You can run the NetScope backend natively as a user service in NixOS. Simply imp
 
 ## AI Disclaimer
 This project was primarily built and architected in collaboration with an AI coding assistant (Google DeepMind's Antigravity).
-
-## License
-MIT License
