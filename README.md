@@ -16,8 +16,8 @@ NetScope is a modern, lightweight, and highly customizable network data monitor.
 ## Showcase
 
 ### Quick Demo
-<video src="docs/video/demo.mp4" width="100%" controls></video>
-
+<video src="https://raw.github.com/Chethan-L701/netscope/main/docs/video/demo.mp4" width="640" height="360" controls>
+</video>
 ### Dashboard Overview
 ![Combined Overview](docs/images/combinedoverview.png)
 ![Separated Overview](docs/images/seperatedoverview.png)
