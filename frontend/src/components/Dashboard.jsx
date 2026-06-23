@@ -260,6 +260,12 @@ export default function Dashboard({ networkName }) {
     }
   };
 
+  const handleHeatmapClick = (date) => {
+    setDrilldownHistory(prev => [...prev, { mode: topMode, anchor: activeDrilldown }]);
+    setTopMode('daily');
+    setActiveDrilldown(date);
+  };
+
   const handleBack = () => {
     if (drilldownHistory.length === 0) return;
     const last = drilldownHistory[drilldownHistory.length - 1];
@@ -295,7 +301,7 @@ export default function Dashboard({ networkName }) {
       )}
 
       {/* Heatmap Section */}
-      {networkName && activeNetwork && <Heatmap network={activeNetwork} />}
+      {networkName && activeNetwork && <Heatmap network={activeNetwork} onCellClick={handleHeatmapClick} />}
 
       {/* Top Chart Section */}
       <div style={{ background: 'var(--surface-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--surface-border)', boxShadow: 'var(--shadow-sm)' }}>

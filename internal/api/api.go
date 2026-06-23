@@ -49,6 +49,8 @@ func (s *Server) Start(addr string) error {
 	mux.HandleFunc("/api/settings", corsHandler(s.handleSettings))
 	mux.HandleFunc("/api/export", corsHandler(s.handleExport))
 	mux.HandleFunc("/api/import", corsHandler(s.handleImport))
+	mux.HandleFunc("/api/database/clear", corsHandler(s.handleClearDatabase))
+	mux.HandleFunc("/api/shutdown", corsHandler(s.handleShutdown))
 
 	fmt.Printf("HTTP API Server listening on %s\n", addr)
 	return http.ListenAndServe(addr, mux)
@@ -261,4 +263,38 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"status":"imported"}`))
+}
+
+func (s *Server) handleClearDatabase(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "must be POST", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := s.store.ClearDatabase(); err != nil {
+		http.Error(w, "failed to clear database", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"cleared"}`))
+}
+
+func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "must be POST", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"shutting down"}`))
+	
+	// Flush before exiting so client gets the response
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
+
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		os.Exit(1) // Exit with code 1 so systemd's Restart=on-failure will restart it
+	}()
 }

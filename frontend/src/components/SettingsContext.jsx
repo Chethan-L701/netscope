@@ -10,7 +10,8 @@ export const SettingsProvider = ({ children }) => {
     topChartType: "combined", // 'combined', 'separate'
     bottomChartType: "straight_pie", // 'straight_pie', 'normal_pie', 'bar'
     theme: "dark", // 'dark', 'light', 'custom'
-    customColors: {}
+    customColors: {},
+    keepBackground: true
   });
 
   const [loading, setLoading] = useState(true);

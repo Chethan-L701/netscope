@@ -30,11 +30,12 @@ func (s *Store) UpsertUsage(networkName string, t time.Time, rxDelta, txDelta ui
 	}
 
 	minuteBucket := t.Truncate(time.Minute)
-	hourBucket := t.Truncate(time.Hour)
+	y, m, d := t.Date()
+	hour, _, _ := t.Clock()
+	hourBucket := time.Date(y, m, d, hour, 0, 0, 0, t.Location())
 	// For daily we need to truncate correctly based on local timezone
 	// time.Truncate(24*time.Hour) truncates to UTC midnight, which is fine, 
 	// but to be safer with local time zones we can do:
-	y, m, d := t.Date()
 	dayBucket := time.Date(y, m, d, 0, 0, 0, 0, t.Location())
 
 	tx, err := s.db.Begin()

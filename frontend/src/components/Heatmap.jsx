@@ -4,7 +4,7 @@ import { format, subDays, startOfDay, parseISO, startOfWeek, subWeeks, addDays }
 import { formatBytes } from '../utils/format';
 import './Heatmap.scss';
 
-export default function Heatmap({ network }) {
+export default function Heatmap({ network, onCellClick }) {
   const { settings } = useSettings();
   const apiBase = `http://localhost:${settings?.port || "8080"}`;
   const [data, setData] = useState([]);
@@ -90,8 +90,16 @@ export default function Heatmap({ network }) {
                 <div 
                   key={i} 
                   className={`heatmap-cell ${cell.usage === 0 ? 'empty' : ''} ${cell.isFuture ? 'future' : ''}`}
-                  style={cell.usage > 0 ? { backgroundColor: `color-mix(in srgb, var(--accent-color) ${intensity}%, transparent)` } : {}}
+                  style={{
+                    ...(cell.usage > 0 ? { backgroundColor: `color-mix(in srgb, var(--accent-color) ${intensity}%, transparent)` } : {}),
+                    cursor: cell.isFuture ? 'default' : 'pointer'
+                  }}
                   onMouseEnter={(e) => handleMouseEnter(e, cell)}
+                  onClick={() => {
+                    if (!cell.isFuture && onCellClick) {
+                      onCellClick(cell.date);
+                    }
+                  }}
                 />
               );
             })}

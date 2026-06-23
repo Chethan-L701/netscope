@@ -4,7 +4,8 @@ contextBridge.exposeInMainWorld('api', {
   settings: {
     get: () => ipcRenderer.invoke('get-settings'),
     save: (settings) => ipcRenderer.invoke('save-settings', settings),
-    quit: () => ipcRenderer.send('quit-app')
+    quit: () => ipcRenderer.send('quit-app'),
+    restartBackend: () => ipcRenderer.send('restart-backend')
   },
   dialog: {
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),

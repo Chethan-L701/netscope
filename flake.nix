@@ -21,7 +21,7 @@
         packages = rec {
           backend = pkgs.buildGoModule {
             pname = "netscope-backend";
-            version = "0.1.0";
+            version = "0.1.1";
             src = ./.;
             subPackages = [ "cmd/netscope-backend" ];
             vendorHash = "sha256-2Uxoa+QTexlG+0sRbE+Gt/7NtWjVP/TSrhc4Nu0gfNo=";
@@ -31,14 +31,14 @@
 
           frontend = pkgs.buildNpmPackage {
             pname = "netscope-frontend";
-            version = "0.1.0";
+            version = "0.1.1";
             src = ./frontend;
             npmDepsHash = "sha256-GqVDwNZ4YPslZ5ft1Uo29fmsBn4TxKjBuvn3A9h8Bv0=";
             
             ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
             
             postInstall = ''
-              cp -r dist main.cjs preload.cjs netscope.png $out/lib/node_modules/netscope/
+              cp -r dist main.cjs preload.cjs netscope.png port_conflict.html $out/lib/node_modules/netscope/
               
               mkdir -p $out/bin
               cat > $out/bin/netscope-frontend <<EOF
@@ -51,7 +51,7 @@ EOF
 
           default = pkgs.stdenv.mkDerivation {
             pname = "netscope";
-            version = "0.1.0";
+            version = "0.1.1";
             src = ./.;
             
             nativeBuildInputs = [ pkgs.copyDesktopItems ];
@@ -78,15 +78,8 @@ EOF
 
               cat > $out/bin/netscope <<EOF
 #!/bin/sh
-  # Start backend
-  $out/bin/netscope-backend &
-  BACKEND_PID=\$!
-
-  # Cleanup on exit
-  trap "kill \$BACKEND_PID" EXIT
-
-  # Start frontend
-$out/bin/netscope-frontend
+export NETSCOPE_BACKEND_BIN="$out/bin/netscope-backend"
+exec $out/bin/netscope-frontend "\$@"
 EOF
               chmod +x $out/bin/netscope
             '';

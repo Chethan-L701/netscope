@@ -133,6 +133,25 @@
         background: var(--accent-hover);
       }
     }
+
+    &.btn-danger {
+      background: var(--error-color);
+      color: #fff;
+
+      &:hover {
+        background: var(--error-hover);
+      }
+    }
+
+    &.btn-danger-outline {
+      background: transparent;
+      border: 1px solid var(--error-color);
+      color: var(--error-color);
+
+      &:hover {
+        background: var(--error-bg);
+      }
+    }
   }
 
   .settings-actions {

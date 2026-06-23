@@ -31,6 +31,23 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
+func (s *Store) ClearDatabase() error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	tables := []string{"minute_usage", "hourly_usage", "daily_usage", "networks"}
+	for _, t := range tables {
+		if _, err := tx.Exec("DELETE FROM " + t); err != nil {
+			return fmt.Errorf("failed to clear table %s: %w", t, err)
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (s *Store) migrate() error {
 	networkQuery := `
 	CREATE TABLE IF NOT EXISTS networks (

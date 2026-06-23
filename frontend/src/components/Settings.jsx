@@ -23,7 +23,8 @@ export default function Settings() {
     theme: "dark",
     customColors: {},
     dailyQuotaLimitMB: 0,
-    monthlyQuotaLimitMB: 0
+    monthlyQuotaLimitMB: 0,
+    keepBackground: true
   });
 
   const [showRestart, setShowRestart] = useState(false);
@@ -93,6 +94,28 @@ export default function Settings() {
             value={draft.port} 
             onChange={(e) => updateDraft('port', e.target.value)} 
           />
+        </div>
+        <div className="setting-row">
+          <span className="setting-label">Keep Process in Background</span>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={draft.keepBackground !== false}
+              onChange={(e) => {
+                if (!e.target.checked) {
+                  const confirmMsg = "Turning this off will disable data usage monitoring when the UI is closed. Do you wish to proceed?";
+                  if (!window.confirm(confirmMsg)) {
+                    return; // cancel toggle
+                  }
+                }
+                updateDraft('keepBackground', e.target.checked);
+              }}
+              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+              Monitor usage when UI is closed
+            </span>
+          </label>
         </div>
       </div>
 
@@ -239,6 +262,63 @@ export default function Settings() {
               }
             }}>Import JSON</button>
           </div>
+        </div>
+      </div>
+
+      <div className="settings-section">
+        <h2>Daemon Management</h2>
+        <div className="setting-row">
+          <span className="setting-label">Restart Background Server</span>
+          <button className="btn" style={{ background: 'var(--accent-color)', color: '#fff', border: 'none' }} onClick={() => {
+            if (window.api && window.api.settings.restartBackend) {
+              window.api.settings.restartBackend();
+              alert("Restart signal sent. The daemon will restart in the background.");
+            }
+          }}>Restart Daemon</button>
+        </div>
+      </div>
+
+      <div className="settings-section" style={{ border: '1px solid var(--error-color)', backgroundColor: 'var(--error-bg)' }}>
+        <h2 style={{ color: 'var(--error-color)' }}>Danger Zone</h2>
+        <div className="setting-row">
+          <span className="setting-label" style={{ color: 'var(--error-color)' }}>Reset to Defaults</span>
+          <button className="btn btn-danger-outline" onClick={() => {
+            if (window.confirm("Are you sure you want to reset all settings to their default values? This action cannot be undone.")) {
+              const defaultSettings = {
+                port: "8080",
+                topChartType: "combined",
+                bottomChartType: "straight_pie",
+                theme: "dark",
+                customColors: {},
+                dailyQuotaLimitMB: 0,
+                monthlyQuotaLimitMB: 0,
+                keepBackground: true
+              };
+              saveSettings(defaultSettings);
+              setDraft(defaultSettings);
+              alert("Settings reset to default.");
+              if (settings.port !== "8080") {
+                setShowRestart(true);
+              }
+            }
+          }}>Reset Settings</button>
+        </div>
+        <div className="setting-row">
+          <span className="setting-label" style={{ color: 'var(--error-color)' }}>Clear Local Database</span>
+          <button className="btn btn-danger" onClick={async () => {
+            if (window.confirm("CRITICAL WARNING: Are you sure you want to permanently delete ALL your historical data usage records? This action is absolutely irreversible.")) {
+              try {
+                const res = await fetch(`http://localhost:${settings.port}/api/database/clear`, { method: 'POST' });
+                if (res.ok) {
+                  alert("Database cleared successfully. Refresh the dashboard to see changes.");
+                } else {
+                  alert("Failed to clear database.");
+                }
+              } catch (e) {
+                alert("Error: " + e.message);
+              }
+            }
+          }}>Delete Database</button>
         </div>
       </div>
 
