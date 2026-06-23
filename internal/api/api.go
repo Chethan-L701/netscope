@@ -19,38 +19,61 @@ type Server struct {
 	store        *store.Store
 	settingsPath string
 	settingsMu   sync.Mutex
+	apiKey       string
 }
 
-func NewServer(mon *monitor.Monitor, db *store.Store, settingsPath string) *Server {
+func NewServer(mon *monitor.Monitor, db *store.Store, settingsPath string, apiKey string) *Server {
 	return &Server{
 		mon:          mon,
 		store:        db,
 		settingsPath: settingsPath,
+		apiKey:       apiKey,
 	}
 }
 
 func (s *Server) Start(addr string) error {
 	mux := http.NewServeMux()
 
-	// Simple CORS wrapper for frontend development
-	corsHandler := func(h http.HandlerFunc) http.HandlerFunc {
+	// Simple CORS and Auth wrapper
+	authHandler := func(h http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			key := r.Header.Get("Authorization")
+			if len(key) > 7 && key[:7] == "Bearer " {
+				key = key[7:]
+			}
+			if key == "" {
+				key = r.URL.Query().Get("apiKey")
+			}
+
+			if key != s.apiKey {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
 			h(w, r)
 		}
 	}
 
-	mux.HandleFunc("/api/networks", corsHandler(s.handleAllNetworks))
-	mux.HandleFunc("/api/networks/active", corsHandler(s.handleActiveNetworks))
-	mux.HandleFunc("/api/usage", corsHandler(s.handleUsage))
-	mux.HandleFunc("/api/realtime", corsHandler(s.handleRealtime))
+	mux.HandleFunc("/api/networks", authHandler(s.handleAllNetworks))
+	mux.HandleFunc("/api/networks/active", authHandler(s.handleActiveNetworks))
+	mux.HandleFunc("/api/usage", authHandler(s.handleUsage))
+	mux.HandleFunc("/api/realtime", authHandler(s.handleRealtime))
 	
 	// Add export/import stubs and settings endpoints
-	mux.HandleFunc("/api/settings", corsHandler(s.handleSettings))
-	mux.HandleFunc("/api/export", corsHandler(s.handleExport))
-	mux.HandleFunc("/api/import", corsHandler(s.handleImport))
-	mux.HandleFunc("/api/database/clear", corsHandler(s.handleClearDatabase))
-	mux.HandleFunc("/api/shutdown", corsHandler(s.handleShutdown))
+	mux.HandleFunc("/api/settings", authHandler(s.handleSettings))
+	mux.HandleFunc("/api/export", authHandler(s.handleExport))
+	mux.HandleFunc("/api/import", authHandler(s.handleImport))
+	mux.HandleFunc("/api/database/clear", authHandler(s.handleClearDatabase))
+	mux.HandleFunc("/api/shutdown", authHandler(s.handleShutdown))
 
 	fmt.Printf("HTTP API Server listening on %s\n", addr)
 	return http.ListenAndServe(addr, mux)

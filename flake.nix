@@ -64,6 +64,7 @@ EOF
                 desktopName = "NetScope";
                 genericName = "Network Monitor";
                 categories = [ "System" "Network" ];
+                startupWMClass = "netscope";
               })
             ];
 

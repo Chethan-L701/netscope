@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from './ThemeContext';
+import { useSettings } from './SettingsContext';
 import { Activity, Settings, Sun, Moon, Network, ChevronDown, ChevronRight } from 'lucide-react';
 import './Sidebar.scss';
 
 export default function Sidebar({ activeTab, setActiveTab, selectedNetwork, setSelectedNetwork }) {
   const { theme, toggleTheme } = useTheme();
+  const { settings } = useSettings();
   const [networksOpen, setNetworksOpen] = useState(false);
   const [networks, setNetworks] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/networks')
+    const port = settings.port || 8080;
+    fetch(`http://localhost:${port}/api/networks?apiKey=${settings.apiKey || ''}`)
       .then(res => res.json())
       .then(data => {
         if (data) setNetworks(data);
       })
       .catch(() => {});
-  }, []);
+  }, [settings]);
 
   return (
     <aside className="sidebar">

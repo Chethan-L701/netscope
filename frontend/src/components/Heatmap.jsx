@@ -12,10 +12,12 @@ export default function Heatmap({ network, onCellClick }) {
 
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, content: null });
 
+  const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
+
   useEffect(() => {
     if (!network) return;
 
-    fetch(`${apiBase}/api/usage?network=${network}&period=daily`)
+    fetch(`${apiBase}/api/usage?network=${network}&period=daily&${apiKeyParam}`)
       .then(res => res.json())
       .then(usageData => {
         const now = startOfDay(new Date());

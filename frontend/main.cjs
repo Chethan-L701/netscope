@@ -3,6 +3,9 @@ const path = require('node:path')
 const fs = require('node:fs')
 const os = require('node:os')
 
+app.name = 'netscope';
+app.setAppUserModelId('netscope')
+
 const getConfigDir = () => path.join(os.homedir(), '.config', 'netscope')
 const getSettingsPath = () => path.join(getConfigDir(), 'settings.json')
 
@@ -10,6 +13,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 1024,
     height: 768,
+    title: 'NetScope',
     autoHideMenuBar: true,
     icon: path.join(__dirname, 'netscope.png'),
     webPreferences: {
@@ -30,6 +34,8 @@ const http = require('http')
 const { spawn } = require('child_process')
 
 let backendProcess = null;
+let activeBackendPort = null;
+let activeApiKey = null;
 
 function isPortFree(port) {
   return new Promise(resolve => {
@@ -41,9 +47,11 @@ function isPortFree(port) {
   });
 }
 
-function isOurBackend(port) {
+function isOurBackend(port, apiKey) {
   return new Promise(resolve => {
-    const req = http.get(`http://127.0.0.1:${port}/api/networks`, res => {
+    const req = http.get(`http://127.0.0.1:${port}/api/networks`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    }, res => {
       resolve(res.statusCode === 200);
     });
     req.on('error', () => resolve(false));
@@ -88,18 +96,31 @@ app.whenReady().then(async () => {
   ipcMain.on('quit-app', () => app.quit())
 
   ipcMain.on('restart-backend', async () => {
+    let currentSettings = { port: "8080", apiKey: "" };
+    try { currentSettings = JSON.parse(fs.readFileSync(getSettingsPath(), 'utf8')); } catch (e) {}
+    let newPort = parseInt(currentSettings.port) || 8080;
+    
     try {
-      const req = http.request(`http://127.0.0.1:${port}/api/shutdown`, { method: 'POST' });
+      const shutdownPort = activeBackendPort || newPort;
+      const shutdownKey = activeApiKey || currentSettings.apiKey;
+      
+      const req = http.request(`http://127.0.0.1:${shutdownPort}/api/shutdown`, { 
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${shutdownKey}` }
+      });
       req.on('error', () => {}); // ignore
       req.end();
       
       // Wait for it to die (500ms sleep in backend)
       await new Promise(r => setTimeout(r, 1000));
       
-      const isOurs = await isOurBackend(port);
+      const isOurs = await isOurBackend(newPort, currentSettings.apiKey);
       if (!isOurs) {
         startBackend();
       }
+      
+      activeBackendPort = newPort;
+      activeApiKey = currentSettings.apiKey;
     } catch (e) {
       console.error("Failed to restart backend", e);
     }
@@ -123,8 +144,8 @@ app.whenReady().then(async () => {
   })
 
   // Backend Initialization Logic
-  let settings = { port: "8080", keepBackground: true };
-  try { settings = JSON.parse(fs.readFileSync(getSettingsPath(), 'utf8')); } catch (e) { }
+  let settings = { port: "8080", keepBackground: true, apiKey: "" };
+  try { settings = JSON.parse(fs.readFileSync(getSettingsPath(), 'utf8')); } catch (e) {}
   let port = parseInt(settings.port) || 8080;
 
   const saveSettings = (s) => {
@@ -133,9 +154,12 @@ app.whenReady().then(async () => {
     fs.writeFileSync(getSettingsPath(), JSON.stringify(s, null, 2));
   };
 
+  activeBackendPort = port;
+  activeApiKey = settings.apiKey;
+
   const free = await isPortFree(port);
   if (!free) {
-    const isOurs = await isOurBackend(port);
+    const isOurs = await isOurBackend(port, settings.apiKey);
     if (!isOurs) {
       await new Promise(resolve => {
         const promptWin = new BrowserWindow({
@@ -155,6 +179,7 @@ app.whenReady().then(async () => {
               srv.close(() => {
                 settings.port = port.toString();
                 saveSettings(settings);
+                activeBackendPort = port;
                 startBackend();
                 resolve();
               });
@@ -163,6 +188,7 @@ app.whenReady().then(async () => {
             port = result.port;
             settings.port = port.toString();
             saveSettings(settings);
+            activeBackendPort = port;
             startBackend();
             resolve();
           }

@@ -32,8 +32,9 @@ export const SettingsProvider = ({ children }) => {
     setSettings(newSettings);
     // Persist via backend API
     const port = settings?.port || "8080";
+    const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
     try {
-      await fetch(`http://localhost:${port}/api/settings`, {
+      await fetch(`http://localhost:${port}/api/settings?${apiKeyParam}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSettings)

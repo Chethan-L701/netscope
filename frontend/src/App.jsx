@@ -10,6 +10,25 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedNetwork, setSelectedNetwork] = useState(null);
 
+  React.useEffect(() => {
+    switch (activeTab) {
+      case 'dashboard':
+        document.title = 'NetScope - Dashboard';
+        break;
+      case 'networks_overview':
+        document.title = 'NetScope - Networks';
+        break;
+      case 'network_detail':
+        document.title = `NetScope - ${selectedNetwork} Analytics`;
+        break;
+      case 'settings':
+        document.title = 'NetScope - Settings';
+        break;
+      default:
+        document.title = 'NetScope';
+    }
+  }, [activeTab, selectedNetwork]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':

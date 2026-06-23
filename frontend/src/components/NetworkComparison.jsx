@@ -18,12 +18,13 @@ const NETWORK_COLORS = [
 export default function NetworkComparison() {
   const { settings } = useSettings();
   const apiBase = `http://localhost:${settings?.port || "8080"}`;
+  const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
   const [allNetworks, setAllNetworks] = useState([]);
   const [bottomMode, setBottomMode] = useState('today');
   const [bottomData, setBottomData] = useState([]);
 
   useEffect(() => {
-    fetch(`${apiBase}/api/networks`)
+    fetch(`${apiBase}/api/networks?${apiKeyParam}`)
       .then(res => res.json())
       .then(data => {
         if (data) setAllNetworks(data);
@@ -35,7 +36,7 @@ export default function NetworkComparison() {
     if (allNetworks.length === 0) return;
 
     const fetchPromises = allNetworks.map(net => 
-      fetch(`${apiBase}/api/usage?network=${net}&period=daily`)
+      fetch(`${apiBase}/api/usage?network=${net}&period=daily&${apiKeyParam}`)
         .then(res => res.json())
         .then(data => ({ network: net, data }))
     );

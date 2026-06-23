@@ -27,6 +27,7 @@ import { useSettings } from './SettingsContext';
 export default function Dashboard({ networkName }) {
   const { settings } = useSettings();
   const apiBase = `http://localhost:${settings?.port || "8080"}`;
+  const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
   const [activeNetwork, setActiveNetwork] = useState(networkName || '');
   const [connectedNetworks, setConnectedNetworks] = useState([]);
   const [allNetworks, setAllNetworks] = useState([]);
@@ -40,7 +41,7 @@ export default function Dashboard({ networkName }) {
   const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
-    fetch(`${apiBase}/api/networks/active`)
+    fetch(`${apiBase}/api/networks/active?${apiKeyParam}`)
       .then(res => {
         if (!res.ok) throw new Error('Network response was not ok');
         setConnectionError(false);
@@ -58,13 +59,13 @@ export default function Dashboard({ networkName }) {
       })
       .catch(() => setConnectionError(true));
 
-    fetch(`${apiBase}/api/networks`)
+    fetch(`${apiBase}/api/networks?${apiKeyParam}`)
       .then(res => res.json())
       .then(data => {
         if (data) setAllNetworks(data);
       })
       .catch(() => setConnectionError(true));
-  }, [apiBase, networkName]);
+  }, [apiBase, networkName, apiKeyParam]);
 
   useEffect(() => {
     if (networkName) {
@@ -88,7 +89,7 @@ export default function Dashboard({ networkName }) {
 
     if (topMode === 'realtime') {
       setTopData([]);
-      const sse = new EventSource(`${apiBase}/api/realtime?network=${activeNetwork}`);
+      const sse = new EventSource(`${apiBase}/api/realtime?network=${activeNetwork}&${apiKeyParam}`);
       
       sse.onmessage = (e) => {
         setConnectionError(false);
@@ -117,7 +118,7 @@ export default function Dashboard({ networkName }) {
       if (topMode === 'hourly') period = 'minute';
       if (topMode === 'daily') period = 'hour';
 
-      fetch(`${apiBase}/api/usage?network=${activeNetwork}&period=${period}`)
+      fetch(`${apiBase}/api/usage?network=${activeNetwork}&period=${period}&${apiKeyParam}`)
         .then(res => res.json())
         .then(data => {
           const now = new Date();

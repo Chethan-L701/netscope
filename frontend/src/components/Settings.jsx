@@ -73,8 +73,18 @@ export default function Settings() {
       <div className="modal-overlay">
         <div className="modal-content">
           <h3>Restart Required</h3>
-          <p>The API port has been changed. You must completely restart NetScope for the backend service to bind to the new port.</p>
-          <button className="btn btn-apply" onClick={triggerRestart}>Close NetScope</button>
+          <p>The API port has been changed. The backend service needs to be restarted to bind to the new port.</p>
+          <button className="btn btn-apply" onClick={() => {
+            if (window.api && window.api.settings.restartBackend) {
+              window.api.settings.restartBackend();
+              setShowRestart(false);
+              alert("Daemon restarted on the new port. The UI will now use the new connection.");
+              // Reload page to re-initialize contexts with the new port
+              window.location.reload();
+            } else {
+              triggerRestart();
+            }
+          }}>Restart Daemon</button>
         </div>
       </div>
     );
@@ -210,7 +220,8 @@ export default function Settings() {
             <button className="btn btn-cancel" onClick={async () => {
               if (window.api && window.api.dialog) {
                 try {
-                  const res = await fetch(`http://localhost:${settings.port}/api/export?format=json`);
+                  const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
+                  const res = await fetch(`http://localhost:${settings.port}/api/export?format=json&${apiKeyParam}`);
                   const data = await res.text();
                   const success = await window.api.dialog.showSaveDialog({
                     defaultPath: 'netscope_export.json',
@@ -225,7 +236,8 @@ export default function Settings() {
             <button className="btn btn-cancel" onClick={async () => {
               if (window.api && window.api.dialog) {
                 try {
-                  const res = await fetch(`http://localhost:${settings.port}/api/export?format=csv`);
+                  const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
+                  const res = await fetch(`http://localhost:${settings.port}/api/export?format=csv&${apiKeyParam}`);
                   const data = await res.text();
                   const success = await window.api.dialog.showSaveDialog({
                     defaultPath: 'netscope_export.csv',
@@ -249,7 +261,8 @@ export default function Settings() {
                     filters: [{ name: 'JSON Files', extensions: ['json'] }]
                   });
                   if (content) {
-                    await fetch(`http://localhost:${settings.port}/api/import`, {
+                    const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
+                    await fetch(`http://localhost:${settings.port}/api/import?${apiKeyParam}`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: content
@@ -263,6 +276,29 @@ export default function Settings() {
             }}>Import JSON</button>
           </div>
         </div>
+      </div>
+
+      <div className="settings-section">
+        <h2>API & Security</h2>
+        <div className="setting-row">
+          <span className="setting-label">Local API Key</span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              readOnly 
+              className="setting-input" 
+              value={settings.apiKey || 'Not Generated'} 
+              style={{ width: '250px', background: 'var(--surface-bg)', opacity: 0.8 }} 
+            />
+            <button className="btn btn-cancel" onClick={() => {
+              navigator.clipboard.writeText(settings.apiKey || '');
+              alert('API Key copied to clipboard!');
+            }}>Copy</button>
+          </div>
+        </div>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+          This key is required to make requests to the local API on port {settings.port}.
+        </p>
       </div>
 
       <div className="settings-section">
@@ -308,7 +344,8 @@ export default function Settings() {
           <button className="btn btn-danger" onClick={async () => {
             if (window.confirm("CRITICAL WARNING: Are you sure you want to permanently delete ALL your historical data usage records? This action is absolutely irreversible.")) {
               try {
-                const res = await fetch(`http://localhost:${settings.port}/api/database/clear`, { method: 'POST' });
+                const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
+                const res = await fetch(`http://localhost:${settings.port}/api/database/clear?${apiKeyParam}`, { method: 'POST' });
                 if (res.ok) {
                   alert("Database cleared successfully. Refresh the dashboard to see changes.");
                 } else {

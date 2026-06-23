@@ -6,11 +6,12 @@ import NetworkComparison from './NetworkComparison';
 export default function NetworksOverview() {
   const { settings } = useSettings();
   const apiBase = `http://localhost:${settings?.port || "8080"}`;
+  const apiKeyParam = `apiKey=${settings?.apiKey || ''}`;
   const [networks, setNetworks] = useState([]);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${apiBase}/api/networks`)
+    fetch(`${apiBase}/api/networks?${apiKeyParam}`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();

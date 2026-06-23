@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -66,8 +68,18 @@ func main() {
 	settingsPath := filepath.Join(appDir, "settings.json")
 
 	port := "8080"
+	apiKey := ""
+
+	generateAPIKey := func() string {
+		bytes := make([]byte, 16)
+		if _, err := rand.Read(bytes); err != nil {
+			return "fallback-insecure-key-12345"
+		}
+		return hex.EncodeToString(bytes)
+	}
+
+	var settings map[string]interface{}
 	if data, err := os.ReadFile(settingsPath); err == nil {
-		var settings map[string]interface{}
 		if err := json.Unmarshal(data, &settings); err == nil {
 			if p, ok := settings["port"]; ok {
 				if floatPort, isFloat := p.(float64); isFloat {
@@ -76,15 +88,26 @@ func main() {
 					port = strPort
 				}
 			}
+			if key, ok := settings["apiKey"].(string); ok && key != "" {
+				apiKey = key
+			} else {
+				apiKey = generateAPIKey()
+				settings["apiKey"] = apiKey
+				if newData, err := json.MarshalIndent(settings, "", "  "); err == nil {
+					os.WriteFile(settingsPath, newData, 0644)
+				}
+			}
 		}
 	} else if os.IsNotExist(err) {
-		defaultSettings := map[string]interface{}{
+		apiKey = generateAPIKey()
+		settings = map[string]interface{}{
 			"port": "8080",
 			"topChartType": "combined",
 			"bottomChartType": "straight_pie",
 			"theme": "dark",
+			"apiKey": apiKey,
 		}
-		if data, err := json.MarshalIndent(defaultSettings, "", "  "); err == nil {
+		if data, err := json.MarshalIndent(settings, "", "  "); err == nil {
 			os.WriteFile(settingsPath, data, 0644)
 		}
 	}
@@ -114,7 +137,7 @@ func main() {
 	go mon.Start(ctx)
 
 	// Initialize and Start HTTP API Server
-	apiServer := api.NewServer(mon, dbStore, settingsPath)
+	apiServer := api.NewServer(mon, dbStore, settingsPath, apiKey)
 	
 	go func() {
 		if err := apiServer.Start(":" + port); err != nil {
