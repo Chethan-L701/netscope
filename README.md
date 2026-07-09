@@ -61,7 +61,7 @@ You can run the NetScope backend natively as a user service in NixOS. Simply imp
 
 ```nix
 {
-  inputs.netscope.url = "path/to/netscope";
+  inputs.netscope.url = "github:Chethan-L701/netscope";
 
   outputs = { self, nixpkgs, netscope, ... }: {
     nixosConfigurations.my-host = nixpkgs.lib.nixosSystem {
