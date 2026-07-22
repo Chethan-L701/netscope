@@ -16,6 +16,18 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        desktopItem = pkgs.makeDesktopItem {
+          name = "netscope";
+          exec = "netscope";
+          icon = "netscope";
+          desktopName = "NetScope";
+          genericName = "Network Monitor";
+          categories = [
+            "System"
+            "Network"
+          ];
+          startupWMClass = "netscope";
+        };
       in
       {
         packages = rec {
@@ -25,7 +37,11 @@
             src = ./.;
             subPackages = [ "cmd/netscope-backend" ];
             vendorHash = "sha256-2Uxoa+QTexlG+0sRbE+Gt/7NtWjVP/TSrhc4Nu0gfNo=";
-            buildInputs = with pkgs; [ networkmanager dbus glib ];
+            buildInputs = with pkgs; [
+              networkmanager
+              dbus
+              glib
+            ];
             nativeBuildInputs = with pkgs; [ pkg-config ];
           };
 
@@ -34,18 +50,18 @@
             version = "0.1.1";
             src = ./frontend;
             npmDepsHash = "sha256-GqVDwNZ4YPslZ5ft1Uo29fmsBn4TxKjBuvn3A9h8Bv0=";
-            
+
             ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
-            
+
             postInstall = ''
-              cp -r dist main.cjs preload.cjs netscope.png port_conflict.html $out/lib/node_modules/netscope/
-              
-              mkdir -p $out/bin
-              cat > $out/bin/netscope-frontend <<EOF
-#!/bin/sh
-exec ${pkgs.electron}/bin/electron $out/lib/node_modules/netscope/main.cjs "\$@"
-EOF
-              chmod +x $out/bin/netscope-frontend
+                            cp -r dist main.cjs preload.cjs netscope.png port_conflict.html $out/lib/node_modules/netscope/
+                            
+                            mkdir -p $out/bin
+                            cat > $out/bin/netscope-frontend <<EOF
+              #!/bin/sh
+              exec ${pkgs.electron}/bin/electron $out/lib/node_modules/netscope/main.cjs "\$@"
+              EOF
+                            chmod +x $out/bin/netscope-frontend
             '';
           };
 
@@ -53,41 +69,32 @@ EOF
             pname = "netscope";
             version = "0.1.1";
             src = ./.;
-            
+
             nativeBuildInputs = [ pkgs.copyDesktopItems ];
-            
-            desktopItems = [
-              (pkgs.makeDesktopItem {
-                name = "netscope";
-                exec = "netscope";
-                icon = "netscope";
-                desktopName = "NetScope";
-                genericName = "Network Monitor";
-                categories = [ "System" "Network" ];
-                startupWMClass = "netscope";
-              })
-            ];
 
             installPhase = ''
-              mkdir -p $out/bin
-              mkdir -p $out/share/pixmaps
-              
-              cp ./netscope.png $out/share/pixmaps/netscope.png
-              
-              ln -s ${backend}/bin/netscope-backend $out/bin/netscope-backend
-              ln -s ${frontend}/bin/netscope-frontend $out/bin/netscope-frontend
+                            mkdir -p $out/bin
+                            mkdir -p $out/share/pixmaps
+                            mkdir -p $out/share/applications
+                            cp ${desktopItem}/share/applications/* $out/share/applications/
+                            
+                            cp ./netscope.png $out/share/pixmaps/netscope.png
+                            
+                            ln -s ${backend}/bin/netscope-backend $out/bin/netscope-backend
+                            ln -s ${frontend}/bin/netscope-frontend $out/bin/netscope-frontend
 
-              cat > $out/bin/netscope <<EOF
-#!/bin/sh
-export NETSCOPE_BACKEND_BIN="$out/bin/netscope-backend"
-exec $out/bin/netscope-frontend "\$@"
-EOF
-              chmod +x $out/bin/netscope
+                            cat > $out/bin/netscope <<EOF
+              #!/bin/sh
+              export NETSCOPE_BACKEND_BIN="$out/bin/netscope-backend"
+              exec $out/bin/netscope-frontend "\$@"
+              EOF
+                            chmod +x $out/bin/netscope
             '';
           };
         };
 
         devShells.default = pkgs.mkShell {
+          name = "netscope";
           buildInputs = with pkgs; [
             # Go and related tools
             go
@@ -127,32 +134,43 @@ EOF
           '';
         };
       }
-    ) // {
-      nixosModules.default = { config, lib, pkgs, ... }: {
-        options.services.netscope = {
-          enable = lib.mkEnableOption "NetScope Network Manager Backend";
-          port = lib.mkOption {
-            type = lib.types.port;
-            default = 8080;
-            description = "Port for the NetScope backend API server.";
+    )
+    // {
+      nixosModules.default =
+        {
+          config,
+          lib,
+          pkgs,
+          ...
+        }:
+        {
+          options.services.netscope = {
+            enable = lib.mkEnableOption "NetScope Network Manager Backend";
+            port = lib.mkOption {
+              type = lib.types.port;
+              default = 8080;
+              description = "Port for the NetScope backend API server.";
+            };
           };
-        };
 
-        config = lib.mkIf config.services.netscope.enable {
-          systemd.user.services.netscope-backend = {
-            description = "NetScope Network Manager Backend";
-            wantedBy = [ "default.target" ];
-            after = [ "network.target" "NetworkManager.service" ];
-            serviceConfig = {
-              ExecStart = "${self.packages.${pkgs.system}.backend}/bin/netscope-backend";
-              Restart = "on-failure";
-              # Store state in ~/.local/share/netscope natively
-              Environment = [
-                "PATH=${lib.makeBinPath [ pkgs.networkmanager ]}"
+          config = lib.mkIf config.services.netscope.enable {
+            systemd.user.services.netscope-backend = {
+              description = "NetScope Network Manager Backend";
+              wantedBy = [ "default.target" ];
+              after = [
+                "network.target"
+                "NetworkManager.service"
               ];
+              serviceConfig = {
+                ExecStart = "${self.packages.${pkgs.system}.backend}/bin/netscope-backend";
+                Restart = "on-failure";
+                # Store state in ~/.local/share/netscope natively
+                Environment = [
+                  "PATH=${lib.makeBinPath [ pkgs.networkmanager ]}"
+                ];
+              };
             };
           };
         };
-      };
     };
 }
